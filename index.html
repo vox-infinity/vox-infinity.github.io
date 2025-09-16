@@ -1,0 +1,3204 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/html">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Umss">
+  <meta property="og:title" content="Vox-Infinity: Benchmarking the Limits of Long-Context Spoken Language Models"/>
+  <link rel="icon" type="image/x-icon" href="static/images/favicon.ico">    
+  
+  <title>Vox-Infinity</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+  <link rel="stylesheet" href="static/css/audio-table.css">
+  <link rel="stylesheet" type="text/css" href="static/css/dropdown_style.css">
+</head>
+
+<body>
+
+
+<section class="hero is-light" style="background: linear-gradient(135deg, #6a11cb 0%, #fcc625 100%);">
+  <div class="hero-body" style="padding: 1rem 0;">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <!-- Main Title with Animation -->
+          <h1 class="title is-2 publication-title" style="font-family: 'Roboto', sans-serif; color: #ffffff; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);">
+            <span class="mmmu" style="font-weight: bold; font-size: 3.5rem;">Vox-Infinity</span>
+          </h1>
+
+          <!-- Subtitle with Custom Styling -->
+          <h2 class="subtitle is-4 publication-subtitle" style="font-family: 'Lora', serif; color: #ffffff; font-weight: 400; letter-spacing: 1px;">
+            Benchmarking the Limits of Long-Context Spoken Language Models
+          </h2>
+
+          <!-- Meta Description -->
+          <meta name="description" content="Benchmarking Audio Hallucinations in Large Audio-Language Models">
+
+
+          <!-- Button for Hugging Face Link -->
+          <a href="https://huggingface.co/spaces/Exgc/OmniSep" target="_blank" class="button is-primary is-large" style="margin-top: 15px; background-color: #000000; color: white; border-radius: 30px; font-size: 1.1rem; display: inline-block; width: 30%; margin-right: 2%; text-align: center;">
+            🤗 Dialogues of Vox-Infinity
+          </a>
+
+            <!-- Button for Hugging Face Link -->
+            <a href="https://huggingface.co/spaces/Exgc/OmniSep" target="_blank" class="button is-primary is-large" style="margin-top: 15px; background-color: #000000; color: white; border-radius: 30px; font-size: 1.1rem; display: inline-block; width: 30%; margin-right: 2%; text-align: center;">
+                🤗 QAs of Vox-Infinity
+            </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+	  
+  <section class="section hero is-light">
+    <div class="container is-max-desktop">
+      <!-- Abstract. -->
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+            <h2 class="title is-3">Abstract</h2>
+            <div class="content has-text-justified">
+                <p>
+                    Long-context reasoning remains a fundamental challenge for large language models, as excessively long inputs often lead to the forgetting of salient information. This issue is even more pronounced in the speech domain, where audio, as a low-compression modality, requires significantly more embeddings than text to preserve both semantic content and acoustic cues. To address this, we introduce <b>Vox-Infinity</b>, the first benchmark specifically designed to evaluate long-context understanding in spoken language models. Vox-Infinity systematically extends audio history along two dimensions: turns and duration. It covers a diverse range of representative scenarios, including dialogues with varying structural depth and semantic complexity. Crucially, it provides explicit answer provenance annotations and organizes samples based on the context length required to resolve each query, enabling precise and length-aware evaluation of model performance. Furthermore, we present the first comprehensive study of history modeling strategies in this setting, analyzing how models balance the trade-off between preserving long-range semantics and retaining recent acoustic signals.
+                </p>
+                <div style="text-align: center;">
+                    <img src="./res/dialogue.png" style="max-width: 100%; height: auto; display: block; margin-left: auto; margin-right: auto;" alt="Dialogue illustration">
+                </div>
+            </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container">
+        <style>
+          .chat-container {
+            max-width: 700px;
+            margin: 0 auto;
+            height: 480px;
+            background: #e5e5e5;
+            border-radius: 18px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1.5px solid #d3d3d3;
+          }
+          .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px 10px 16px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+          }
+          .chat-message {
+            display: flex;
+            align-items: flex-end;
+          }
+          .chat-message.user {
+            flex-direction: row-reverse;
+          }
+          .chat-message.bot {
+            flex-direction: row;
+          }
+          .chat-bubble {
+            max-width: 80%;
+            padding: 12px 18px;
+            border-radius: 8px 8px 8px 2px;
+            font-size: 1.08rem;
+            line-height: 1.6;
+            background: #fff;
+            color: #222;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            position: relative;
+            word-break: break-word;
+            min-height: 38px;
+          }
+          .chat-message.user .chat-bubble {
+            background: #95ec69;
+            color: #222;
+            border-radius: 8px 2px 8px 8px;
+            margin-right: 6px;
+            margin-left: 48px;
+          }
+          .chat-message.bot .chat-bubble {
+            background: #fff;
+            color: #222;
+            border-radius: 8px 8px 8px 2px;
+            margin-left: 6px;
+            margin-right: 48px;
+          }
+          .chat-avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 6px;
+            margin: 0 4px;
+            object-fit: cover;
+            background: #f0f0f0;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+          }
+          .chat-message.user .chat-avatar {
+            margin-left: 10px;
+            margin-right: 0;
+            border: 1.5px solid #95ec69;
+            background: #eaffd0;
+          }
+          .chat-message.bot .chat-avatar {
+            margin-right: 10px;
+            margin-left: 0;
+            border: 1.5px solid #e5e5e5;
+            background: #fff;
+          }
+          .chat-message.user .chat-bubble::after {
+            content: "";
+            position: absolute;
+            right: -8px;
+            top: 16px;
+            border-width: 8px 0 8px 10px;
+            border-style: solid;
+            border-color: transparent transparent transparent #95ec69;
+          }
+          .chat-message.bot .chat-bubble::after {
+            content: "";
+            position: absolute;
+            left: -8px;
+            top: 16px;
+            border-width: 8px 10px 8px 0;
+            border-style: solid;
+            border-color: transparent #fff transparent transparent;
+          }
+          .chat-messages::-webkit-scrollbar {
+            width: 8px;
+          }
+          .chat-messages::-webkit-scrollbar-thumb {
+            background: #e0e0e0;
+            border-radius: 4px;
+          }
+          .chat-messages {
+            scrollbar-width: thin;
+            scrollbar-color: #e0e0e0 #e5e5e5;
+          }
+          .chat-bubble audio {
+            margin-top: 8px;
+            width: 100%;
+            border-radius: 6px;
+            background: #f7f7f7;
+            min-width: 180px;
+            /* 设置每个语音条的最小宽度 */
+            display: block;
+          }
+          .vox-dropdown-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 18px;
+          }
+          .vox-dropdown {
+            font-size: 1.08rem;
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: 1.5px solid #d3d3d3;
+            background: #fff;
+            color: #222;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+            outline: none;
+            transition: border 0.2s;
+          }
+          .vox-dropdown:focus {
+            border: 1.5px solid #6a11cb;
+          }
+        </style>
+
+        <div class="vox-dropdown-container">
+          <label for="voxSubsetSelect" style="margin-right: 10px; font-size: 1.08rem; color: #333;">Choose the subset:</label>
+          <select id="voxSubsetSelect" class="vox-dropdown" onchange="showChat(this.value)">
+            <option value="multi-turn">Ultra Multi-turn Dialogues</option>
+            <option value="conversational">Conversational Dialogues</option>
+            <option value="speech">Personal Monologue</option>
+            <option value="acoustic">Beyond-Semantic Dialogues</option>
+          </select>
+        </div>
+
+        <!-- 多个chat-messages，默认只显示multi-turn，其他用display:none -->
+        <div class="chat-container">
+          <!-- multi-turn -->
+          <div class="chat-messages" id="chat-multi-turn">
+            <!-- Hardcoded English dialogue for MUL2554_00.wav to MUL2554_39.wav -->
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Hi there, my name is Jane. I'm traveling to Cambridge and I'd like to try some local food.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_00.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Good day and thank you for calling. How can I help you?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_01.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I'm looking for a train from Cambridge to Peterborough on Sunday.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_02.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Sure, not a problem. Can you hold on for me while I quickly search through my database?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_03.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Shofeng, can you please find one that leaves after 15 minutes past 4 p.m.?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_04.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Okay, I have a train at 1606.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_05.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Okay, great. Can I please have the travel time?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_06.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Sure, it's 15 minutes, 15 minutes, sorry.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_07.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Okay, and what is the arrival time?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_08.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                1656
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_09.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Okay, great. I'm also looking for an expensive place to dine in the center.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_10.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Okay, can you hold on while I quickly search through my database?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_11.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Sure thing. Please look for one that serves traditional Chinese food.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_12.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Okay. All right. I have picked up the ugly ducking. It's actually serving Chinese food at an expensive range and it's situated in the center.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_13.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Oh, that's excellent. Can I please have their postcode?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_14.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                All right, just a second. Yes, CB21TW.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_15.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Thank you. And what is their address?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_16.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                It's 12 St. John Street, City Center.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_17.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Can I please have their phone number?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_18.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Okay, unfortunately, we do not have a contact number for them.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_19.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Oh, that's okay. Thank you very much.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_20.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Not a problem. Would you like me to send you an email?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_21.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yes, sure. That would be great.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_22.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                All right. And what is your email address?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_23.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                My email address is jforjuliette.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_24.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Okay.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_25.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And then Edward, S and E for Echo, D for Delta, W for Whiskey, and A for Alpha.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_26.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Yes.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_27.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                R for Romeo, D for Delta, S and T for Tango.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_28.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                R-D-S-T-S?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_29.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And then six, the number six.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_30.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Yes.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_31.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And then E for Eko, N for November, and Yahoo.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_32.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Yes.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_33.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Yes, so it's jedwards, T6EN at yahoo.com.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_34.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Okay, just to quickly confirm that, it's jedwards6en at yahoo.com. Is that correct? Yes.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_35.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yes, that's correct.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_36.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                All right. Thank you so much. Is there anything else that I can assist you with?
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_37.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                No, thank you. Thank you for helping me out.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_38.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                All right then. Take care. Bye-bye.
+                <audio controls>
+                  <source src="res/data/multi-turn/dialogues/MUL2554_39.wav" type="audio/wav">
+                  Your browser does not support the audio element.
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+                <img class="chat-avatar" src="res/user.png" alt="User">
+                <div class="chat-bubble">
+                (Question) What is the arrival time of the train from Cambridge to Peterborough?
+                  <audio controls>
+                    <source src="res/data/multi-turn/dialogues/MUL2554_Q4.wav" type="audio/wav">
+                  </audio>
+                </div>
+            </div>
+            <div class="chat-message bot">
+                <img class="chat-avatar" src="res/bot.png" alt="Bot">
+                <div class="chat-bubble">
+                    (Ref Answer, Source from Turn 10) The arrival time is 1656.
+                </div>
+            </div>
+          </div>
+
+          <!-- speech -->
+          <div class="chat-messages" id="chat-speech" style="display:none;">
+            <!-- S0000000 - S0000234 -->
+            <!-- This block is auto-generated from the provided mapping -->
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;music&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000000.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Welcome to drinkin bros presented by goesbet dot com.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000001.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;music&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000002.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Sit back, relax and grab a fucking drink.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000003.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;music&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000004.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yes, welcome to drinkin bro.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000005.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000006.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Think it took them so long to figure out to magnetize the charging port here?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000007.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Magnetize the charging port?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000008.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah like it it helps hold the the charger end because it magnetizes, right?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000009.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah should be.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000010.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                An elecrticity and magnetism are the same thing, electromagnetism.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000011.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000012.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah you haven't promised to that today?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000013.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                No.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000014.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000015.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Just appreciating that is fucking working properly.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000016.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah you are.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000017.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                It is i think it is it is true cause if you're if like if it's dark in a room or there's kids sleeping or may be got too many cocktails you're tryna stick that thing in it just stoop, pulls it in, it is it helps you in any moment in your life.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000018.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Are we still talking about a charger at this point?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000019.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Well he has got three children so.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000020.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000021.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000022.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That's what i said to my wife too i'm like um i'm i'm just trying to stick this thing in here ah trying to get little charge.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000023.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                North, north pole south pole right that's how it work.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000024.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000025.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah we got a j buckley on this show today kids. Ah star of stage and screen currently starring in c b s seal team. He's been on the show before, fan fave welcome back a j.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000026.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Are you guys shooting currently?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000027.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah we are about to go back to shooting on wednesday we got we got shutdown for a ah covid ah alert.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000028.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah somebody popped but very confidential we don't know who but i do believe it was a false-positive but we still have to do the the forteen day ah obligatory shutdown.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000029.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000030.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                So yeah ah i mean it was it was great in a sense so everybody got an extended thanksgiving break but it just sucks because, you know, everything's put on pause and you know!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000031.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000032.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                There's really a system that's put in place when being with what what we're all going through right now with all these new rules and regulations and and this you know.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000033.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                How do you pay people in that break and how does it consider and and so, it's a it's a bit of shit show but i'm you know glad everybody is healthy and okay.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000034.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah and we are going back to work on wednesday until we get the next false-positive.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000035.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah exactly i.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000036.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000037.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                It's kinda what i wanted to talk about because um on this show ah few weeks ago we had mentioned that you guys were back to shooting. A lot people were asking us what the protocols and everything ah like that was for shooting now i have seen ah pictures from the set of like.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000038.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Blackish for example, right.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000039.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000040.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000041.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <!-- ...继续添加，直到S0000234.wav ... -->
+            <!-- The following is the continued auto-generated list for S0000042 - S0000234 -->
+            <!-- For brevity, only a few are shown, but in the real output, all 234 should be listed -->
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                They're currently in in same with the this is us ah they're currently in in glass cubes of emotion where everybody is sealed off on set with some form of plexiglass.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000042.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah you are kind of ah studying your sides and lines um behind the plexiglass and then they're calling in teams one by one and when i say teams, ah usually starts with what.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000043.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000044.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah they do their job and then they move out and then the directors they move out and then you guys go in for blocking, ah which is rehearsal and and move out. Is that is that happening to you guys too because i mean you guys are in action packed show like i just find it so difficult to imagine.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000045.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                It's it's it's it's ah you know at the beginning of the season when when we came back we all fired up to come back and you know you can't there is no hugging, there is no nothing, there is no like touching, it's the weirdest thing and everybody's wearing mask the whole time.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000046.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah and we're broken up into you know the reds, red team, blue team, ah and various different other teams that they have, and then we come in last, when everything's done, we rehearse with our masks on.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000047.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And then when they say action we take off, do the scene and put our masks back on and then leave the area, then blue team blue ah team comes in and then fix whatever adjustments.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000048.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Um but if you're on red team you're getting tested three times ah a week.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000049.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000050.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah so monday, wednesday, friday or or at least seventy-two hours before you show up to set ah for filming.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000051.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Um so i'm actually in route right now to ah to go get my testing, so maybe while we're doing the show see something being stuck in my nose cause i will do it live.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000052.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000053.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Let's do it.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000054.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000055.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Hey listen, ah so i've got the script where it's basically just me spitting in people's mouth you telling me i can't get that made right now.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000056.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000057.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I mean may be for redtube or youporn.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000058.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000059.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                People are kink shaming right now.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000060.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000061.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That's one of one of my kinks is to walk around in public without a fucking mask on.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000062.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah it is.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000063.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000064.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah that's how i've i've jerked off in a lot of bars and olds bathrooms i'll say that.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000065.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000066.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                So so nipple clamps and no mask i mean that is you're you're you're on to something.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000067.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Just a light touch of electricity.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000068.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah i looked cuomo's got some nipple rings.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000069.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                He does yeah, but he got studs of loads through there.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000070.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000071.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah, it it appears to be studs in that rings which i guess is another kink, right?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000072.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000073.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000074.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And i don't know.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000075.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Cuomo, cuomo the the the governor of new york.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000076.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000077.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                You saw that?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000078.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah, you never saw that picture?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000079.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                No, are you fucking kidding me?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000080.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000081.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I'll text it to you hang on a sec.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000082.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Oh that explains all.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000083.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                A lot, right?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000084.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000085.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000086.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000087.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                A lot. He was he was wearing a white shirt kinda look like a polo ah which is not conducive for nipple ring and you know um i he does what he does.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000088.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Um and and obviously we we don't kink shame like we just said on on the show but it's it's weird to see a sixty-five year old man with nipple rings yeah! Yeah it is.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000089.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000090.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Now i wonder if it's ah that was a decision he made, or if some of a woman talked him into and if so, what's up with a woman that wants to see a sixty-five year old with with nipple studs you know.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000091.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000092.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Or or may maybe he just lost a bet.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000093.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000094.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                We've we've all lost bets and had do fucked up shit over the years, that's for sure.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000095.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I ah a a hundred percent.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000096.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000097.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And ah a portion i can't talk about it on this.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000098.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                No, it's fine, look it's it's an offer stuff you are on a family show we're we're not gonna drag you down into our unfrank ah holocaust world that we talk about all time on the show. Not gonna do that with,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000099.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000100.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000101.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That's all we are doing is trying to honor her ah like.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000102.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I appreciate it.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000103.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000104.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah you know.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000105.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yep in a christmas spirit.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000106.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000107.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Obviously! When's the last time you read a copy of anne frank when was the last time you picked that up.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000108.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                It's,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000109.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000110.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                What we do is we ask that question all the time to make our guest super uncomfortable like ah shit. What's the right answer though do you say oh man franked it up like two months ago or or you know or i didn't frank it still like seventh grade.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000111.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000112.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Oh jesus!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000113.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000114.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah ah you you got me.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000115.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah yeah and and again you are on a family show so we we'll move on from it but speaking of of being on a family show i know c b s made the decision to cut back your episode order due to covid.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000116.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Um and they did they did the shows on the network. Um yeah well how many how many episodes you guys doing this year?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000117.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah we are only doing fourteen but if you include the two hour premier which is two episodes that we didn't air last year cause like the season ended on such like a a weird note was like.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000118.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000119.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Season finale but a lot of people you know didn't understand did not understand still the covid impact yet that we had shut down so we couldn't finish filming and so the season ended.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000120.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;sil&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000121.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                But i can tell you this that the season opener yeah the studio or network or t v is is pretty damn good and really proud of it but yeah we we are shooting fourteen as opposed to ah twenty-two episodes.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000122.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;sil&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000123.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Got you. Ah um with the recent shutdown did that knock a couple episodes off that schedule like is it like is it like the.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000124.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000125.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Football is it that they were doing were like hey man if you guys miss too bad tough shit um and then if that is the case do they dock you and pay you and do you get pay for what you sign on for contractually?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000126.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                No, we get we all every everybody on the crew and everybody took like um we almost lost half in pay.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000127.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                No.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000128.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000129.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah bit yeah we sort of just you know that's that's yeah that's the part that sucks we have a contract that says twenty-two but you know this is called like within the within the language of c b s this thing called force measured and so it's.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000130.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000131.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                God, yeah so they this is this is an act of god if you want to say that or somebody creating in a lab.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000132.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000133.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                It is it's a same thing with ah with ah terrorism or anything like that is.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000134.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000135.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                It's hard to get ensured.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000136.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000137.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah! So they ah yeah they do that and every body just that ah you know suck it up and deal with it and again i always.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000138.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000139.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                The amount of thanks that i have here and i mean this sincerely that i have for this job and and get to go do this job and its its by far the.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000140.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                The greatest acting gig i've ever had in my life and it's so much fun so to have lost the job because of covid and not come back which almost happened completely because we're a very expensive show.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000141.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah hm.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000142.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                We're a big show and.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000143.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;sil&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000144.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                You know c b s lost a lot of money um due to like the n c double a and all sorts of stuff and you know they just they just didn't know how to how we are gonna deal with one of the benefits for us we shoot outside a lot.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000145.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000146.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah, you guys have a dope ass ah outdoor set yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000147.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah and then um ah and then our our our show runner um spencer and chris um julak ah really ah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000148.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Tryna put our heads together and look this is how we can adapt and overcome and and we can create more,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000149.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000150.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Stories this way and um cause there was a huge budget cut too there like you guys can come back but you can only do this show for this amount which like was was basically next to impossible for like it might being so much half of the budget that we lost.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000151.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                As well.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000152.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000153.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah and.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000154.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;sil&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000155.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                You know this this the season we've gotten more into like the the character stuff, where you know what what's going behind ah ah you know mostly what these guys are supposed to you know these big action sequences,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000156.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Which i don't believe we could have really done in season one two maybe three but it's you're able to do that so i think every second or third episode there will be like a big action sequence of it'll be little ones here and there but will have these big sort of blow out.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000157.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Um and i just being able to go deeper into the psychology of of of the of the guys and the families and and what sort of happening um behind closed doors.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000158.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Um and and i and i do think that for what the hand that the the the writers had been dealt, um and sort of the unknown space that we're now working in.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000159.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah i i think that they they'd really held it together sea mosses and and was actually shooting sea mosses episode ah you guy know mark right?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000160.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah yeah yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000161.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah ah and he is one of my favorite writers on the on the show um that's just cause he wrote the submarine episode but just i just think he's you know he is he knows the world,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000162.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000163.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Than anybody.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000164.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That was a tough one for you i mean did you ah how long you were actually in that tube?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000165.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000166.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah oh first of all.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000167.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I know you actually claustrophobic or was that?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000168.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yes, no no, i i oh oh well there's like.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000169.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000170.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Sense some real panic in that scene, that's why i'm asking.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000171.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah, well i'm not claustrophobic in the center but i'm like i'm in an elevator.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000172.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Right!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000173.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                But if i'm if i'm stuck at a tube in water showing up, i'm fucking claustrophobic.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000174.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000175.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                You think, you think like you're gonna, you're okay until like it's happening and like we did this one?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000176.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah first of all the the dumbest thing i'd say.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000177.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000178.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And i was like look to the to the stunt team i was like make the water cold because i i wanna, i don't wanna be comfortable in there like i wanted to really feel like the thing and and the guy was like are you sure, you're gonna be in for a while, i'm like it's fine i'll be okay.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000179.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah that was a mistake.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000180.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                What a a terrible mistake,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000181.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000182.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                It was like the first and second take i'm fucking delivering, by the fourth take my nuts are fucking shown on camera to my mouth and like i'm so fucking cold. Ah and um.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000183.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                We ah but yeah we still lose one time ah and goldie you guys know goldie?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000184.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah we know.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000185.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                So goldie was,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000186.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000187.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                On that episode because he's done so many ah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000188.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000189.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                This time, with wesley there the whole time really helped me understand a lot of different beats on there um along with mark.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000190.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;sil&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000191.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And ah ah ah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000192.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                You you're breaking up a little bit a j, where you at right now?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000193.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                There was one time when we.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000194.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000195.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah can you hear me?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000196.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000197.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah ah,
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000198.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000199.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah where you're at now was.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000200.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I gotta pull up i'll pull up it's terrible just hold on one second one second.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000201.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah where are you? Are you just driving through the town right now? Just enjoying like a a nice monday afternoon?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000202.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                He's driving to get a covid test.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000203.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Oh no.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000204.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000205.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                So they can start fucking production again.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000206.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Wow, that's crazy man. See are you getting the swab up the nose, is that where you're driving to right now?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000207.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah yeah that's if if if that's what you are saying it if we are ah can you hear me now?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000208.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah yeah i can hear you now yeah you're good.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000209.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And ah i'm literally gonna pull over ah just so we can if this is breaking up or so you can just hear me okay just one second i'll pull over here.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000210.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Sure, yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000211.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Just let me know when it's totally clear and i will ah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000212.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000213.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Perfect right there um but yeah if you if you getting swabbed up today no wonder you look a little nervous.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000214.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;noise&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000215.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah there's.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000216.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000217.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That test is no joke.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000218.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000219.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Their fucking brain pierced or some shit like that?
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000220.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I've got nose bleeds from it.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000221.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Well i've got nose bleeds from doing cocaine all the time, but that's not the same thing yeah.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000222.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Ah this is definitely not the same thing.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000223.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000224.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                I mean it's the same result motherfucker.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000225.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Obviously obviously i'm like you know.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000226.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Like at the end of the date greg giraldo used to tell great joke about the years i spent from two thousand five until two thousand eight spending all my money on drugs and prostitutes.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000227.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Um hm.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000228.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And ever then the housing market crashed and then all my friends they did the right thing they're also broke to him like look i had a lot more fun than you do.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000229.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah!
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000230.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                And yeah we we ended up in the same spot so there'd be lesson kids is to ah not be responsible.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000231.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                &lt;other&gt;
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000232.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah great great community one of the best inter communities of all time.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000233.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Din't he um die in o d.
+                <audio controls>
+                  <source src="res/data/speech/dialogues/POD1000000013_S0000234.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+                <img class="chat-avatar" src="res/user.png" alt="User">
+                <div class="chat-bubble">
+                   (Question) What is the role of an ombudsman according to the speaker?
+                  <audio controls>
+                    <source src="res/data/speech/dialogues/POD1000000013_Q0.wav" type="audio/wav">
+                    您的浏览器不支持 audio 元素。
+                  </audio>
+                </div>
+            </div>
+            <div class="chat-message bot">
+                <img class="chat-avatar" src="res/bot.png" alt="Bot">
+                <div class="chat-bubble">
+                  (Ref Answer) The role of an ombudsman is to comment on and report on matters, make evidence-based and rigorous decisions, and ensure fairness by giving everyone an opportunity, including those who are criticized.
+                </div>
+            </div>
+          <!-- acoustic -->
+          <div class="chat-messages" id="chat-acoustic" style="display:none;">
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                你能分辨不同的说话人吗？
+                <audio controls>
+                  <source src="res/data/acoustic/ACOU_2001_00.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                是的，我可以识别不同的说话人。
+                <audio controls>
+                  <source src="res/data/acoustic/ACOU_2001_01.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+          </div>
+          <!-- conversational -->
+          <div class="chat-messages" id="chat-conversational" style="display:none;">
+            <!-- Car dealership conversational demo -->
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Hey there! So I’m in the market for a new car, and I thought I’d come in and see what you’ve got. Just to give you a little background, I mostly drive to work every day, it’s about a thirty minute commute on the highway, sometimes with traffic. On weekends, I like to go hiking, so I’d need room for some gear or maybe even a bike. I don’t have a family yet, but I do have a dog who likes to come along for the ride. I guess I’m looking for something practical, but still comfortable and maybe a little fun to drive.
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/1.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Hey, thanks for sharing all that! It definitely helps narrow things down. So, it sounds like you’re after a car that can handle your daily commute efficiently, has enough cargo space for your outdoor adventures, and is also comfortable for both you and your dog. Plus, you wouldn’t mind it being a bit fun behind the wheel, got it. Let me ask, are you leaning more towards an SUV or a sedan? Or even open to crossovers or hatchbacks? Also, do you have any preferences when it comes to fuel type, like sticking with gas, or considering hybrids or electric vehicles? That can really open up some interesting options, especially if you’re interested in something efficient for that commute.
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/2.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah, I think I’d be more interested in a crossover or a small SUV, something with a bit more space than a sedan, but not too big that it feels like a boat. And honestly, I’m open to hybrids. I haven’t really thought too much about fully electric since I don’t have a place to charge at home yet, but if there’s a hybrid that gets good mileage, I’d definitely consider it. Comfort’s pretty important to me, especially for those longer drives out of town, but it would be cool if the car wasn’t boring to drive, you know? I’d say safety features and maybe some modern tech would be high up on my list too.
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/3.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Great, that gives me a lot to work with! Crossovers and small SUVs are super popular these days, especially for folks who want that nice middle ground between space, comfort, and easy maneuverability. Since you’re open to hybrids, that definitely widens the options, and they really are excellent for both city traffic and highway driving in terms of fuel efficiency. A couple of models jump to mind right away, the Toyota RAV4 Hybrid and the Honda CR V Hybrid are both known for great gas mileage, reliable reputations, and surprisingly peppy driving dynamics. They both offer plenty of cargo space for a dog and hiking gear, plus rear seats that fold down if you want to fit a bike inside. Plus, you get all wheel drive standard on the hybrid versions, which is nice if you end up on winding or gravelly roads for those weekend trips. As for tech and comfort, both come loaded with the latest safety features, think adaptive cruise control, lane keeping assist, blind spot monitoring, and large touchscreens with Apple CarPlay and Android Auto, so your drives should feel both safe and connected.  Are there any features that are absolute must haves for you, like a sunroof, heated seats, or a premium sound system? Or is there a price range you’d like to stick to? That way I can tailor suggestions even more specifically for you.
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/4.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                Yeah, I think both of those sound like good options honestly. I’ve heard good things about the RAV4 Hybrid especially. For features, I’d say heated seats would be amazing, winters here get pretty chilly, so that’s kind of a must. A sunroof would be a nice bonus but it’s not a deal breaker if it’s missing. I definitely want good safety features like you mentioned, since I’m in traffic a lot, and having CarPlay or Android Auto would make my life a lot easier for navigation and music. Oh, and I’d prefer cloth seats over leather to be honest, it’s just more comfortable for my dog and I don’t have to worry as much about scratches. As far as budget, ideally I’d like to keep the total price under $40,000, all in. I’m planning to buy, not lease, and I’d be looking to make a decision within the next couple months, definitely before the end of summer. Do those models fall in that range with the features I’m looking for?
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/5.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Absolutely, you’re in a really solid spot with your preferences and budget, that $40,000 cap opens up plenty of choices for well equipped trims. Both the RAV4 Hybrid and the CR V Hybrid offer heated cloth seats on their mid level trims, which fits what you’re after. For example, in the RAV4 Hybrid, the XLE or XLE Premium trim would get you heated cloth seats, all those safety features, and Apple CarPlay and Android Auto standard. The CR V Hybrid’s EX and Sport trims are similar, you’ll get heated cloth seats, Honda’s full Safety Sensing suite, and all the connectivity you want. Even with some popular extras like a sunroof bundled into a package, you’d still clear your budget. Both offer room for upgrades if you find a trim with a few more creature comforts you like. If you’re interested in a test drive, I’d suggest trying both on the same day, they each feel a little different in terms of the way they handle and how quiet the cabin is. The RAV4 Hybrid tends to have a slightly sportier feel, while the CR V Hybrid is super smooth and quiet. Do you want to know more about their driving feel, cargo space, or details about how the hybrid systems work? Or is there another brand or model you’re also curious about before narrowing things down?
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/6.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That’s really helpful, thanks! I think you’ve really zeroed in on what I’m after. I’d love to try out both, just to get a feel for the differences. I care about how it drives, and a quieter cabin is definitely appealing, but a little sporty zip is nice too, so I guess I’m on the fence there. Cargo space is pretty important since I do pack a lot in for my hikes and sometimes longer road trips.  One thing I am kind of curious about is long term cost, like, is there any big maintenance difference between a hybrid and a regular gas car? I’ve always had regular cars, so I just want to make sure there aren’t any surprises with hybrid batteries or anything. And what’s the warranty like for hybrids these days? That’s probably my last big concern before feeling really confident moving forward.
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/7.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                Great questions! It’s smart to think ahead about long term costs, it’s one of the main reasons people go hybrid and it sounds like you want to avoid any headaches down the road. So, in terms of maintenance, hybrids like the RAV4 and CR V actually tend to be pretty low maintenance. They use regenerative braking, which means your brake pads can last longer than in a traditional gas car. Oil changes are a bit less frequent since the engine isn’t running all the time, win there. Where people worry is with the hybrid battery, but modern hybrid batteries are really robust. Toyota, for example, gives you a 10 year or 150,000 mile warranty on the hybrid battery, and Honda’s is 8 years or 100,000 miles, so you’re covered for as long as most folks keep their cars. It’s rare to see major battery issues before those mileage marks. General servicing like tire rotations and fluids are all the same, and both cars have service networks everywhere. And for non hybrid components, the warranties are 3 years/36,000 miles bumper to bumper, and powertrains are 5 years/60,000 miles. So overall, hybrids are actually saving people money, especially if you’re sitting in traffic a lot, their fuel economy is way better, so you’ll really notice it at the pump.  As for cargo space, both models are at the top of their class. The RAV4 Hybrid gives you just over 37.5 cubic feet behind the back seats and even more if you fold them down, it’s plenty for gear, a large dog crate, or even a bike with the front wheel off. The CR V Hybrid is right there too, with a very flat floor and slightly more cargo space if you need every last inch. Once you take them for a spin, it’ll probably come down to which feels better when you’re behind the wheel. Anything else you’re curious about, or do you want to chat about things like financing next?
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/8.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That’s super reassuring about the battery and maintenance, that was really my main worry with going hybrid. Sounds like either of these would fit into my lifestyle pretty seamlessly and could even save me money in the long run. And yeah, the cargo space numbers sound perfect; that’s more than enough room for what I usually carry. Honestly, I think I’m good on most fronts now, really appreciate you breaking everything down so clearly. I’d like to test drive both and then maybe talk through the financing options you offer, especially if there are any deals or incentives for hybrids right now. Ideally, I’d go with a shorter loan if it keeps the monthly payment reasonable. I’ll need a little time to think after the test drives, but I’m excited to get the ball rolling!
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/9.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                I’m glad I could help clear things up! You’re looking at two excellent vehicles, so taking them out for a test drive will really help you feel which one’s the better fit for you and your dog. As for financing, we do have competitive rates on new hybrids, and there are often loyalty discounts, low interest offers, or even cash rebates that pop up, especially as the model year moves along. Sometimes manufacturers offer special hybrid incentives as well, so I’ll keep an eye on that for you. After your test drives, we can run the numbers for different loan lengths, shorter terms can definitely save you on overall interest if that works with your monthly budget. And if you have a current car to trade in, we can appraise that as part of your deal, which might help lower your financing even more. Let me know what days work for you to come in, and I’ll make sure both the RAV4 Hybrid and CR V Hybrid are ready for you to try out, set up just how you want them. No pressure, take your time deciding! Whenever you’re ready, we’ll help you every step of the way. Looking forward to seeing you behind the wheel and getting you out on the road for some new adventures!
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/10.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message user">
+              <img class="chat-avatar" src="res/user.png" alt="User">
+              <div class="chat-bubble">
+                That all sounds great, I’m honestly looking forward to trying them out and seeing which one feels right. I’ll check my schedule and give you a call to set up a test drive for both, maybe sometime later this week if possible. Thanks again for all your help and for making this a lot less intimidating than I expected! I’ll be in touch soon, and I really appreciate you checking for any deals on hybrids. Talk soon!
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/11.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+            <div class="chat-message bot">
+              <img class="chat-avatar" src="res/bot.png" alt="Bot">
+              <div class="chat-bubble">
+                It’s absolutely my pleasure! I’m here whenever you’re ready, and I’ll make sure to keep an eye out for the best deals for you. I think you’re going to really enjoy both test drives, you’re in a great spot! Just give me a call or shoot me a message when you’re ready to come in, and I’ll handle the rest. Thanks for chatting with me today, and we’ll catch up soon, can’t wait to help you find your new ride!
+                <audio controls>
+                  <source src="res/data/conversation/dialogues/12.wav" type="audio/wav">
+                  您的浏览器不支持 audio 元素。
+                </audio>
+              </div>
+            </div>
+
+            <div class="chat-message user">
+                <img class="chat-avatar" src="res/user.png" alt="User">
+                <div class="chat-bubble">
+                    (Question) What maximum total price did I set for the car purchase? a) $25,000, b) $32,000, c) $40,000, d) $50,000
+                  <audio controls>
+                    <source src="res/data/conversation/dialogues/q_5.wav" type="audio/wav">
+                    您的浏览器不支持 audio 元素。
+                  </audio>
+                </div>
+              </div>
+            <div class="chat-message bot">
+            <img class="chat-avatar" src="res/bot.png" alt="Bot">
+            <div class="chat-bubble">
+                (Ref Answer, Source from Turn 5) $40,000
+            </div>
+            </div>
+
+          </div>
+        </div>
+        <script>
+          function showChat(val) {
+            document.getElementById('chat-multi-turn').style.display = (val === 'multi-turn') ? '' : 'none';
+            document.getElementById('chat-speech').style.display = (val === 'speech') ? '' : 'none';
+            document.getElementById('chat-acoustic').style.display = (val === 'acoustic') ? '' : 'none';
+            document.getElementById('chat-conversational').style.display = (val === 'conversational') ? '' : 'none';
+          }
+        </script>
+      </div>
+    </div>
+  </section>
+</body>
